@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 ALLOWED_HOSTS = [
-    "e-commerce-api-form-3231.onrender.com'",
+    "redone.onrender.com",
     "localhost",
     "127.0.0.1",
 ]
