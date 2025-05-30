@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Payment Methods Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 40px;
+        }
+        .platforms {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+        .platform {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .platform img {
+            width: 100px;
+            height: auto;
+        }
+        .account-number {
+            font-size: 1.3em;
+            margin-bottom: 40px;
+            font-weight: bold;
+        }
+        .qr-code {
+            margin: 0 auto;
+            width: 200px;
+            height: 200px;
+        }
+        a.qr-link {
+            text-decoration: none;
+            color: inherit;
+        }
+    </style>
+</head>
+<body>
+    <h1>Demo Payment Platforms</h1>
+
+    <div class="platforms">
+        {% for platform in payment_platforms %}
+        <div class="platform">
+            <img src="{{ platform.logo_url }}" alt="{{ platform.name }} logo" />
+            <div>{{ platform.name }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="account-number">
+        Default Account Number: {{ account_number }}
+    </div>
+
+    <div>
+        <p>Scan the QR code below to return to homepage:</p>
+        <a href="{{ homepage_url }}" class="qr-link" title="Go to Homepage">
+            <img class="qr-code"
+                 src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ homepage_url|urlencode }}"
+                 alt="QR Code to homepage" />
+        </a>
+    </div>
+</body>
+</html>

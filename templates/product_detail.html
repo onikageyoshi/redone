@@ -1,0 +1,202 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ product.name }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #F3F4F6;
+      color: #1F2937;
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-up {
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeUp 0.6s ease-out forwards;
+    }
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .product-detail-card {
+      background: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    @media(min-width: 1024px) {
+      .product-detail-card {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+
+    .product-image {
+      width: 16rem;
+      height: 16rem;
+      object-fit: cover;
+      border-radius: 0.5rem;
+      border: 1px solid #e5e7eb;
+      flex-shrink: 0;
+    }
+
+    .product-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex-grow: 1;
+    }
+
+    .btn-emerald {
+      background-color: #10B981;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      text-align: center;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+      display: inline-block;
+      max-width: max-content;
+    }
+    .btn-emerald:hover {
+      background-color: #059669;
+    }
+
+    .related-products h2 {
+      color: #065f46;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .related-product-card {
+      background: white;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .related-product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.07);
+    }
+
+    .related-product-image {
+      width: auto;
+      height: 10rem;
+      object-fit: contain;
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .related-product-name {
+      color: #047857;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .related-product-category {
+      color: #6b7280;
+      font-size: 0.875rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .related-product-price {
+      color: #10B981;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .related-product-btn {
+      background-color: #10B981;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      width: 100%;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .related-product-btn:hover {
+      background-color: #059669;
+    }
+  </style>
+</head>
+<body>
+
+<div class="max-w-7xl mx-auto px-4 mt-10 fade-up">
+
+  <!-- Product Detail Card -->
+  <div class="product-detail-card mb-12">
+    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image" />
+
+    <div class="product-info">
+      <h1 class="text-3xl font-bold text-gray-900">{{ product.name }}</h1>
+      <p class="text-sm text-gray-500">Category: {{ product.category }}</p>
+      <p class="text-gray-700">{{ product.description }}</p>
+      <p class="text-green-600 font-bold text-xl">${{ product.price }}</p>
+      <p class="text-gray-500 text-sm">In Stock: {{ product.stock }}</p>
+
+      <!-- POST form instead of <a> -->
+      <form action="{% url 'add_to_cart' product.id %}" method="POST" class="mt-4">
+        {% csrf_token %}
+        <input type="hidden" name="quantity" value="1">
+        <button type="submit" class="btn-emerald">Add to Cart</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Related Products -->
+  {% if related_products %}
+  <div class="related-products">
+    <h2>Related Products</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 fade-up">
+      {% for item in related_products %}
+      <div class="related-product-card">
+        <a href="{% url 'product_detail' item.id %}">
+          <img src="{{ item.image.url }}" alt="{{ item.name }}" class="related-product-image" />
+        </a>
+        <h3 class="related-product-name">{{ item.name }}</h3>
+        <p class="related-product-category">{{ item.category }}</p>
+        <p class="related-product-price">${{ item.price }}</p>
+
+        <!-- POST form instead of <a> -->
+        <form action="{% url 'add_to_cart' item.id %}" method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="quantity" value="1">
+          <button type="submit" class="related-product-btn">Add to Cart</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+</body>
+</html>

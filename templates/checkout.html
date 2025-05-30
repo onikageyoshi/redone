@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Checkout - SwiftCart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+<div class="max-w-4xl mx-auto mt-12 p-6 bg-white rounded shadow">
+
+    <h2 class="text-2xl font-bold mb-6">Checkout</h2>
+
+    {% if cart_items %}
+        <div class="space-y-6">
+            {% for item in cart_items %}
+                <div class="flex items-center space-x-4 border-b pb-4">
+                    {% if item.product.image %}
+                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}"
+                             class="w-24 h-24 object-cover rounded border">
+                    {% else %}
+                        <div class="w-24 h-24 flex items-center justify-center border text-gray-400">No Image</div>
+                    {% endif %}
+
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-semibold">{{ item.product.name }}</h3>
+                        <p class="text-sm text-gray-500">{{ item.product.category }}</p>
+                        <p class="text-md mt-1">Price: <strong>${{ item.product.price }}</strong></p>
+                        <p class="text-md">Quantity: <strong>{{ item.quantity }}</strong></p>
+                        <p class="text-md text-emerald-600">Subtotal: <strong>${{ item.total_price }}</strong></p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="mt-6 text-right">
+            <p class="text-xl font-bold">Grand Total: ${{ total }}</p>
+        </div>
+
+        <!-- Pay Now button linking to payment_methods.html -->
+        <a href="{% url 'payment-method-list-create' %}"
+           class="w-full block mt-8 py-3 bg-emerald-600 text-white font-semibold rounded text-center hover:bg-emerald-700 transition">
+           Pay Now
+        </a>
+
+    {% else %}
+        <div class="bg-yellow-100 text-yellow-700 p-4 rounded">
+            Your cart is empty. <a href="{% url 'home' %}" class="underline text-emerald-600">Continue shopping</a>.
+        </div>
+    {% endif %}
+</div>
+</body>
+</html>

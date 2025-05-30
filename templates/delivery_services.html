@@ -1,0 +1,27 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Delivery Services</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="max-w-3xl mx-auto py-10 px-4">
+    <h1 class="text-3xl font-bold text-center mb-8 text-green-600">Delivery Services</h1>
+    <div class="bg-white shadow-md rounded-lg p-6 space-y-4">
+      {% if delivery_services %}
+        {% for service in delivery_services %}
+          <div class="border-b pb-4">
+            <h2 class="text-xl font-semibold">{{ service.name }}</h2>
+            <p class="text-gray-700">Price: ${{ service.price }}</p>
+            <p class="text-gray-600">{{ service.address }}, {{ service.postal_code }}</p>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-gray-600 text-center">No delivery services available.</p>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

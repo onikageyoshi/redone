@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Payment & Delivery</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="max-w-5xl mx-auto py-10 px-4">
+    <h1 class="text-3xl font-bold text-center mb-10 text-purple-700">Payment & Delivery Options</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+      <!-- Payment Methods -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-2xl font-semibold text-blue-600 mb-4">Payment Methods</h2>
+        {% if payment_methods %}
+          {% for method in payment_methods %}
+            <div class="border-b pb-4 mb-4">
+              <h3 class="text-lg font-semibold">{{ method.name }}</h3>
+              <p class="text-gray-600">{{ method.description }}</p>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-gray-600">No payment methods available.</p>
+        {% endif %}
+      </div>
+
+      <!-- Delivery Services -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-2xl font-semibold text-green-600 mb-4">Delivery Services</h2>
+        {% if delivery_services %}
+          {% for service in delivery_services %}
+            <div class="border-b pb-4 mb-4">
+              <h3 class="text-lg font-semibold">{{ service.name }}</h3>
+              <p class="text-gray-700">Price: ${{ service.price }}</p>
+              <p class="text-gray-600">{{ service.address }}, {{ service.postal_code }}</p>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-gray-600">No delivery services available.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>
