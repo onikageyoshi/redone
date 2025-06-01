@@ -2,118 +2,166 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Your Cart | E-Shop</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8" />
+    <title>Your Cart | E-Shop</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #F3F4F6;
+            color: #1F2937;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        nav {
+            background-color: white;
+            box-shadow: 0 4px 6px rgb(0 0 0 / 0.1);
+        }
+        .btn-blue {
+            background-color: #10B981;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        .btn-blue:hover {
+            background-color: #059669;
+        }
+        .btn-red {
+            background-color: #ef4444;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        .btn-red:hover {
+            background-color: #b91c1c;
+        }
+        .btn-green {
+            background-color: #10B981;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        .btn-green:hover {
+            background-color: #059669;
+        }
+        input[type="number"] {
+            border: 1px solid #D1D5DB;
+            border-radius: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            width: 4rem;
+            font-size: 1rem;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans">
+<body>
 
 <!-- Navbar -->
-<nav class="bg-white shadow px-4 py-3 sm:px-8">
-  <h1 class="text-xl sm:text-2xl font-bold text-emerald-600">E-Shop</h1>
+<nav class="p-4 mb-8 max-w-7xl mx-auto flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-emerald-600">E-Shop</h1>
 </nav>
 
-<!-- Cart Container -->
-<main class="max-w-5xl mx-auto p-4 sm:p-6">
+<!-- Main Cart Section -->
+<main class="max-w-5xl mx-auto bg-white rounded shadow p-4 sm:p-6">
 
-  <h2 class="text-2xl sm:text-3xl font-semibold mb-6 text-center sm:text-left text-emerald-600">Your Shopping Cart</h2>
+    <h2 class="text-2xl sm:text-3xl font-semibold mb-6 text-emerald-600 text-center sm:text-left">Your Shopping Cart</h2>
 
-  {% if cart_items %}
-    <!-- Desktop View -->
-    <div class="hidden sm:block">
-      <table class="w-full text-left border-collapse bg-white rounded-lg overflow-hidden shadow">
-        <thead class="bg-gray-100 text-gray-600 text-sm">
-          <tr>
-            <th class="p-4">Product</th>
-            <th class="p-4">Price</th>
-            <th class="p-4">Quantity</th>
-            <th class="p-4">Total</th>
-            <th class="p-4">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="text-sm">
-          {% for item in cart_items %}
-            <tr class="border-t">
-              <td class="flex items-center gap-4 p-4">
-                {% if item.product.image %}
-                  <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-16 h-16 object-cover rounded border" />
-                {% endif %}
-                <span class="font-medium">{{ item.product.name }}</span>
-              </td>
-              <td class="p-4 text-emerald-600 font-semibold">₦{{ item.product.price }}</td>
-              <td class="p-4">
-                <form method="post" action="{% url 'cart-detail' %}" class="flex items-center gap-2">
-                  {% csrf_token %}
-                  <input type="hidden" name="item_id" value="{{ item.id }}">
-                  <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="w-16 border rounded px-2 py-1 text-sm">
-                  <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded text-sm">Update</button>
-                </form>
-              </td>
-              <td class="p-4 font-semibold">₦{{ item.total_price }}</td>
-              <td class="p-4">
-                <form method="post" action="{% url 'cart-detail' %}">
-                  {% csrf_token %}
-                  <input type="hidden" name="remove_item_id" value="{{ item.id }}">
-                  <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">Remove</button>
-                </form>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Mobile View -->
-    <div class="sm:hidden space-y-4">
-      {% for item in cart_items %}
-        <div class="bg-white rounded-lg shadow p-4 space-y-3">
-          <div class="flex gap-3 items-center">
-            {% if item.product.image %}
-              <img src="{{ item.product.image.url }}" class="w-16 h-16 object-cover rounded border">
-            {% endif %}
-            <div class="flex-1">
-              <h3 class="font-semibold">{{ item.product.name }}</h3>
-              <p class="text-sm text-gray-600">₦{{ item.product.price }}</p>
-            </div>
-          </div>
-
-          <div class="text-sm text-gray-700">
-            Total: <span class="font-bold">₦{{ item.total_price }}</span>
-          </div>
-
-          <form method="post" action="{% url 'cart-detail' %}" class="flex gap-2 items-center">
-            {% csrf_token %}
-            <input type="hidden" name="item_id" value="{{ item.id }}">
-            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="flex-1 border rounded px-2 py-1">
-            <button type="submit" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded py-2 text-sm font-medium">Update</button>
-          </form>
-
-          <form method="post" action="{% url 'cart-detail' %}">
-            {% csrf_token %}
-            <input type="hidden" name="remove_item_id" value="{{ item.id }}">
-            <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white rounded py-2 text-sm font-medium mt-2">Remove</button>
-          </form>
+    {% if cart_items %}
+        <div class="hidden sm:block">
+            <!-- Desktop Table -->
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart_items %}
+                        <tr>
+                            <td class="flex items-center gap-4 py-3">
+                                {% if item.product.image %}
+                                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-16 h-16 object-contain rounded border" />
+                                {% endif %}
+                                <span class="font-medium">{{ item.product.name }}</span>
+                            </td>
+                            <td class="py-3 font-semibold text-emerald-600">₦{{ item.product.price }}</td>
+                            <td class="py-3">
+                                <form method="post" action="{% url 'cart-detail' %}" class="flex items-center gap-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="item_id" value="{{ item.id }}" />
+                                    <input type="number" name="quantity" value="{{ item.quantity }}" min="1" />
+                                    <button type="submit" class="btn-blue">Update</button>
+                                </form>
+                            </td>
+                            <td class="py-3 font-semibold">₦{{ item.total_price }}</td>
+                            <td class="py-3">
+                                <form method="post" action="{% url 'cart-detail' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="remove_item_id" value="{{ item.id }}" />
+                                    <button type="submit" class="btn-red">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-      {% endfor %}
-    </div>
 
-    <!-- Total + Checkout -->
-    <div class="text-right mt-6 text-lg sm:text-xl font-bold text-emerald-700">
-      Total Price: ₦{{ total_price }}
-    </div>
+        <!-- Mobile Version -->
+        <div class="sm:hidden space-y-4">
+            {% for item in cart_items %}
+                <div class="border rounded-lg p-4 bg-gray-50">
+                    <div class="flex gap-4 items-center mb-2">
+                        {% if item.product.image %}
+                            <img src="{{ item.product.image.url }}" class="w-16 h-16 object-contain rounded border" />
+                        {% endif %}
+                        <div>
+                            <h3 class="font-semibold text-gray-800">{{ item.product.name }}</h3>
+                            <p class="text-sm text-gray-600">₦{{ item.product.price }}</p>
+                        </div>
+                    </div>
 
-    <div class="mt-6 text-right">
-      <a href="{% url 'checkout' %}" class="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded shadow text-center">Proceed to Checkout</a>
-    </div>
+                    <div class="text-sm text-gray-700 mb-2">Total: <strong>₦{{ item.total_price }}</strong></div>
 
-  {% else %}
-    <!-- Empty Cart -->
-    <div class="bg-white rounded-lg shadow p-8 text-center text-gray-500 text-lg">
-      <p>Your cart is empty.</p>
-      <a href="{% url 'homepage' %}" class="mt-4 inline-block text-emerald-600 font-medium hover:underline">Browse Products</a>
-    </div>
-  {% endif %}
+                    <form method="post" action="{% url 'cart-detail' %}" class="flex flex-col gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="item_id" value="{{ item.id }}" />
+                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="w-20">
+                        <button type="submit" class="btn-blue w-full">Update</button>
+                    </form>
+
+                    <form method="post" action="{% url 'cart-detail' %}" class="mt-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="remove_item_id" value="{{ item.id }}" />
+                        <button type="submit" class="btn-red w-full">Remove</button>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Total Price & Checkout -->
+        <div class="text-right mt-6 text-xl font-bold text-emerald-700">
+            Total Price: ₦{{ total_price }}
+        </div>
+
+        <div class="mt-6 text-right">
+            <a href="{% url 'checkout' %}" class="btn-green">Proceed to Checkout</a>
+        </div>
+
+    {% else %}
+        <p class="text-center text-gray-500 text-lg py-20">Your cart is empty.</p>
+        <div class="text-center">
+            <a href="{% url 'homepage' %}" class="text-emerald-600 hover:underline">Browse Products</a>
+        </div>
+    {% endif %}
 </main>
 
 </body>
