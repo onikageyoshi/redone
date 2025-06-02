@@ -1,67 +1,27 @@
-from django.shortcuts import render
-from .models import Product
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .models import Product, Order
-from .serializers import ProductSerializer, OrderSerializer
-from rest_framework import response, status, permissions, views
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-from django.shortcuts import redirect, render
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import authenticate
-from rest_framework.permissions import IsAuthenticated
-from django.template.response import TemplateResponse
-from accounts.serializers import SignupSerializer, LoginSerializer
-from store.models import Product
-Product.objects.all()
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import logout, login as django_login, authenticate, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.http import Http404
-from django.shortcuts import render, get_object_or_404
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions, views
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import AuthenticationFailed
-from rest_framework.renderers import TemplateHTMLRenderer
-from .models import Order
-from django.contrib.auth import login as django_login
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Cart, CartItem
-from .serializers import CartSerializer, CartItemSerializer
-from rest_framework.permissions import IsAuthenticated
-from .models import OrderItem
-
-from .models import Cart
-from .serializers import CartSerializer
-
-
-
-from django.conf import settings
-
-
-
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-from django.template.response import TemplateResponse
-from .models import Cart, Order, OrderItem
-
-from django.template.response import TemplateResponse
-
-from django.shortcuts import get_object_or_404
-from django.template.response import TemplateResponse
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
-from .models import Cart, Order, OrderItem, PaymentMethod, DeliveryService
+from accounts.serializers import SignupSerializer, LoginSerializer
+from accounts.models import Profile
+from store.models import Product
 
+from .models import Cart, CartItem, Order, OrderItem, PaymentMethod, DeliveryService
+from .serializers import CartSerializer, CartItemSerializer, ProductSerializer, OrderSerializer, PaymentMethodSerializer, DeliveryServiceSerializer
+
+User = get_user_model()
 
 class CheckoutPageView(APIView):
     permission_classes = [IsAuthenticated]
@@ -76,7 +36,7 @@ class CheckoutPageView(APIView):
         cart = Cart.objects.filter(user=user).first()
 
         if not cart:
-            return TemplateResponse(request, "checkout.html", {
+            return render(request, "checkout.html", {
                 "cart_items": [],
                 "total": 0,
                 "payment_methods": PaymentMethod.objects.all(),
@@ -92,7 +52,7 @@ class CheckoutPageView(APIView):
             "payment_methods": PaymentMethod.objects.all(),
             "delivery_services": DeliveryService.objects.all(),
         }
-        return TemplateResponse(request, "checkout.html", context)
+        return render(request, "checkout.html", context)
 
     @swagger_auto_schema(
         operation_summary="Process checkout",
@@ -117,7 +77,6 @@ class CheckoutPageView(APIView):
         if not cart or not cart.items.exists():
             return Response({"message": "Your cart is empty."}, status=400)
 
-        # Extract fields
         payment_method_name = request.data.get("payment_method")
         delivery_service_name = request.data.get("delivery_service")
         delivery_address = request.data.get("delivery_address")
@@ -130,7 +89,6 @@ class CheckoutPageView(APIView):
         payment_method = get_object_or_404(PaymentMethod, name=payment_method_name)
         delivery_service = get_object_or_404(DeliveryService, name=delivery_service_name) if delivery_service_name else None
 
-        # Create order
         order = Order.objects.create(
             user=user,
             payment_method=payment_method,
@@ -140,7 +98,6 @@ class CheckoutPageView(APIView):
             delivery_country=delivery_country,
         )
 
-        # Move cart items to order items
         for item in cart.items.select_related("product").all():
             OrderItem.objects.create(
                 order=order,
@@ -148,7 +105,6 @@ class CheckoutPageView(APIView):
                 quantity=item.quantity
             )
 
-        # Clear cart
         cart.items.all().delete()
 
         return Response({
@@ -161,14 +117,11 @@ class RemoveFromCartView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, cart_item_id):
-        # Ensure the user is authenticated
         if not request.user.is_authenticated:
             raise AuthenticationFailed('User is not authenticated')
 
-        # Get the cart item to remove
         cart_item = get_object_or_404(CartItem, id=cart_item_id, cart__user=request.user)
 
-        # Delete the cart item
         cart_item.delete()
 
         return Response({
@@ -212,13 +165,10 @@ class AddToCartView(APIView):
         except Product.DoesNotExist:
             raise Http404("Product not found")
 
-        # Retrieve or create a cart for the user
         cart, _ = Cart.objects.get_or_create(user=request.user)
 
-        # Get quantity from form or default to 1
         quantity = int(request.POST.get('quantity', 1))
 
-        # Get or create the CartItem
         cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
 
         if not created:
@@ -227,16 +177,8 @@ class AddToCartView(APIView):
             cart_item.quantity = quantity
         cart_item.save()
 
-        # Option 1: Redirect back to cart page (recommended)
         return redirect('cart-detail')
 
-        # Option 2: Render cart.html directly (if needed)
-        # cart_items = cart.items.all()
-        # total_price = sum(item.total_price for item in cart_items)
-        # return render(request, 'cart.html', {'cart_items': cart_items, 'total_price': total_price})
-
-
-# Cart View
 class CartView(APIView): 
     def get(self, request):
         cart_items = CartItem.objects.filter(cart__user=request.user)
@@ -259,13 +201,10 @@ class CartView(APIView):
                 item.quantity = quantity
                 item.save()
             except CartItem.DoesNotExist:
-                pass  # Optional: handle invalid item
+                pass
 
-        return self.get(request)    
+        return self.get(request) 
 
-
-
-# Cart Item View (to add or delete items in the cart)
 class CartItemView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -275,7 +214,6 @@ class CartItemView(APIView):
         except Cart.DoesNotExist:
             raise Http404("Cart not found")
 
-        # Get product ID and quantity from the request
         product_id = request.data.get("product")
         quantity = request.data.get("quantity", 1)
 
@@ -284,10 +222,8 @@ class CartItemView(APIView):
         except Product.DoesNotExist:
             raise Http404("Product not found")
 
-        # Create the cart item
         cart_item = CartItem.objects.create(cart=cart, product=product, quantity=quantity)
 
-        # Re-render the cart template
         return render(request, 'cart.html', {'cart': cart})
 
     def delete(self, request, cart_id, item_id, format=None):
@@ -301,20 +237,15 @@ class CartItemView(APIView):
         except CartItem.DoesNotExist:
             raise Http404("Cart item not found")
 
-        # Delete the cart item
         cart_item.delete()
 
-        # Re-render the cart template after deletion
         return render(request, 'cart.html', {'cart': cart})
     
-
-
 class ProductDetail(APIView):
     @swagger_auto_schema(auto_schema=None)
     def get(self, request, pk):
         product = get_object_or_404(Product, pk=pk)
         
-        # Get related products in the same category, excluding current product
         related_products = Product.objects.filter(
             category=product.category
         ).exclude(id=product.id)[:4]
@@ -324,71 +255,44 @@ class ProductDetail(APIView):
             'related_products': related_products
         })
 
-
 @method_decorator(login_required, name='dispatch')
 class HomeView(views.APIView):
     def get(self, request):
-        return TemplateResponse(request, "home.html", {})
-
-
-from accounts.models import Profile
+        return render(request, "home.html", {})
 
 def home(request):
     profile = None
     if request.user.is_authenticated:
         profile, _ = Profile.objects.get_or_create(user=request.user)
 
-    # Pass profile to the template
-    return render(request, 'home.html', {
-        'profile': profile,
-        'products': Product.objects.all(),
-        'categories': Category.objects.all()
-    })
-
-from .models import Product, CATEGORY_CHOICES
-
-# views.py
-from django.shortcuts import render
-from .models import Product
-
-def home(request):
-    # Get search query and selected category from GET parameters
     search_query = request.GET.get('search', '')
     selected_category = request.GET.get('category', '')
 
-    # Get all products
     products = Product.objects.all()
 
-    # Filter products by search query if present
     if search_query:
         products = products.filter(name__icontains=search_query)
 
-    # Filter products by selected category if present
     if selected_category:
         products = products.filter(category=selected_category)
 
-    # Get all distinct categories for filtering options
     categories = Product.objects.values_list('category', flat=True).distinct()
 
-    # Render the homepage with filtered products and categories
     return render(request, 'home.html', {
         'products': products,
         'categories': categories,
-        'selected_category': selected_category,  # To highlight the selected category in the dropdown
+        'selected_category': selected_category,
     })
 
 def category_view(request, category_name):
-    # Filter products by category name
     products = Product.objects.filter(category=category_name)
     
-    # Get all distinct categories for the category dropdown
-    categories = sorted({cat[0] for cat in products.CATEGORY_CHOICES})
+    categories = sorted({cat[0] for cat in Product.CATEGORY_CHOICES})
 
-    # Render the homepage with filtered products and categories
     return render(request, 'home.html', {
         'products': products,
         'categories': categories,
-        'selected_category': category_name  # Pass the selected category for active selection
+        'selected_category': category_name
     })
 def product_detail(request, id):
     try:
@@ -399,7 +303,6 @@ def product_detail(request, id):
 
 class SignupView(views.APIView):
     def get(self, request):
-        # Render auth.html on GET
         return render(request, 'auth.html')
 
     @swagger_auto_schema(
@@ -415,10 +318,9 @@ class SignupView(views.APIView):
         serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            django_login(request, user)  # Optional Django login
+            django_login(request, user)
             refresh = RefreshToken.for_user(user)
 
-            # Redirect for browser-based clients
             if request.query_params.get("redirect") == "true":
                 return render(request, 'home.html', {
                     "user": user,
@@ -439,7 +341,6 @@ class SignupView(views.APIView):
 
 class LoginView(views.APIView):
     def get(self, request):
-        # Render auth.html on GET
         return render(request, 'auth.html')
 
     @swagger_auto_schema(
@@ -455,10 +356,9 @@ class LoginView(views.APIView):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data["user"]
-            django_login(request, user)  # Optional Django login
+            django_login(request, user)
             refresh = RefreshToken.for_user(user)
 
-            # Redirect for browser-based clients
             if request.query_params.get("redirect") == "true":
                 return render(request, 'home.html', {
                     "user": user,
@@ -478,11 +378,8 @@ class LoginView(views.APIView):
 @method_decorator(login_required, name='dispatch')
 class HomeView(views.APIView):
     def get(self, request):
-        return TemplateResponse(request, "home.html", {"user": request.user})
+        return render(request, "home.html", {"user": request.user})
     
-
-
-        
 class ProductListCreateView(views.APIView):
     @swagger_auto_schema(responses={200: ProductSerializer(many=True)})
     def get(self, request):
@@ -497,8 +394,6 @@ class ProductListCreateView(views.APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 
 class OrderListCreateView(views.APIView):
     permission_classes = [IsAuthenticated]
@@ -516,20 +411,6 @@ class OrderListCreateView(views.APIView):
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from django.shortcuts import render
-from django.contrib.auth import authenticate, login
-from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.tokens import RefreshToken
-from accounts.serializers import SignupSerializer, LoginSerializer
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-
-User = get_user_model()
 
 class AuthView(APIView):
     @swagger_auto_schema(
@@ -562,7 +443,7 @@ class AuthView(APIView):
             serializer = SignupSerializer(data=request.data)
             if serializer.is_valid():
                 user = serializer.save()
-                login(request, user)  # Django login (optional)
+                login(request, user)
                 refresh = RefreshToken.for_user(user)
                 return render(request, 'auth.html', {
                     "message": "Signup successful",
@@ -579,7 +460,7 @@ class AuthView(APIView):
             serializer = LoginSerializer(data=request.data)
             if serializer.is_valid():
                 user = serializer.validated_data["user"]
-                login(request, user)  # Django login (optional)
+                login(request, user)
                 refresh = RefreshToken.for_user(user)
                 return render(request, 'auth.html', {
                     "message": "Login successful",
@@ -593,45 +474,12 @@ class AuthView(APIView):
             })
 
         return Response({"error": "Invalid mode. Use ?mode=signup or ?mode=login"}, status=400)
-    
-from django.contrib.auth import logout
-from django.shortcuts import redirect
+
 
 def logout_view(request):
     logout(request)
     return redirect('auth-page') 
-
-
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status, permissions
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import AllowAny
-from .models import PaymentMethod, DeliveryService
-from .serializers import PaymentMethodSerializer, DeliveryServiceSerializer
-
-from django.shortcuts import render
-from rest_framework import status, permissions
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
-from drf_yasg.utils import swagger_auto_schema
-
-from .models import PaymentMethod, DeliveryService
-from .serializers import PaymentMethodSerializer, DeliveryServiceSerializer
-
-
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework import status, permissions
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from drf_yasg.utils import swagger_auto_schema
-
-from rest_framework import status
-from .models import PaymentMethod
-from .serializers import PaymentMethodSerializer
-
+    
 class PaymentMethodListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
